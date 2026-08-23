@@ -29,6 +29,7 @@ The `styles.py` module serves as the single source of truth for LaTeX document s
 - **Modularity (Segregation)**: The original `report_generator.py` was overly dense, making it difficult to maintain or debug LaTeX syntax errors. Splitting it into chapter-specific files applies the Single Responsibility Principle, isolating logic and minimizing merge conflicts.
 - **Maintainability (styles.py)**: Hardcoding LaTeX parameters across multiple files causes inconsistencies. `styles.py` guarantees uniform margins, colors (`OSDAG_GREEN`), and table dimensions, making future aesthetic tweaks a one-line change.
 - **Data Visualization**: Plain tables for utilization ratios and material quantities can be hard to interpret. Generating charts dynamically via `charts.py` provides immediate visual context to the structural health and costs.
+- **Table Formatting Constraints**: The repeated 'G' characters for each row were deliberately implemented as a structural workaround to prevent page bleeding and ensure consistent line formatting and proper boundary alignment across pages.
 
 ## 4. Visual Enhancements & Open Polish
 Several aesthetic and structural improvements were added to enhance the overall report quality:
