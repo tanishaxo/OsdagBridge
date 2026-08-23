@@ -106,7 +106,11 @@
 import os, shutil, logging, datetime, tempfile, subprocess
 from dataclasses import dataclass, field
 from typing import Optional, List, Literal
-
+from .styles import (
+    PAGE_MARGIN, DOC_LINE_SPACING, OSDAG_GREEN,
+    TABLE_COL_SEP, TABLE_ARRAY_STRETCH, TABLE_LT_PRE,
+    TABLE_LT_POST, TABLE_RULE_WIDTH, TABLE_EXTRA_ROW_HEIGHT
+)
 from osdagbridge.core.utils.common import (
     KEY_DESIGN_MODE,
     KEY_SPAN,
@@ -156,7 +160,7 @@ def preamble(project_name, job_number, report_date, report_version='Rev 0'):
 \documentclass[12pt,a4paper]{report}
 
 % Packages
-\usepackage[a4paper, margin=1in]{geometry}
+\usepackage[a4paper, margin=""" + PAGE_MARGIN + r"""]{geometry}
 \usepackage{graphicx}
 \usepackage{amsmath}
 \usepackage{amssymb}
@@ -193,20 +197,19 @@ def preamble(project_name, job_number, report_date, report_version='Rev 0'):
 \numberwithin{table}{chapter}
 \numberwithin{figure}{chapter}
 % Table layout and spacing: consistent padding, row height, and longtable pre/post skips
-\setlength{\tabcolsep}{6pt}
-\renewcommand{\arraystretch}{1.12}
-\setlength{\LTpre}{0pt}
-\setlength{\LTpost}{6pt}
+\setlength{\tabcolsep}{""" + TABLE_COL_SEP + r"""}
+\renewcommand{\arraystretch}{""" + TABLE_ARRAY_STRETCH + r"""}
+\setlength{\LTpre}{""" + TABLE_LT_PRE + r"""}
+\setlength{\LTpost}{""" + TABLE_LT_POST + r"""}
 % Table rules (outline thickness) and small extra row height for clarity
-\setlength{\arrayrulewidth}{0.5pt}
-\setlength{\extrarowheight}{0.6pt}
+\setlength{\arrayrulewidth}{""" + TABLE_RULE_WIDTH + r"""}
+\setlength{\extrarowheight}{""" + TABLE_EXTRA_ROW_HEIGHT + r"""}
 
 % Prevent tables from overflowing past the page bottom:
 % if fewer than 5 baseline-skips remain, break to the next page first.
 \BeforeBeginEnvironment{table}{\needspace{5\baselineskip}}
-\BeforeBeginEnvironment{longtable}{\needspace{5\baselineskip}}
 
-\definecolor{osdagGreen}{HTML}{91B014}
+\definecolor{osdagGreen}{HTML}{""" + OSDAG_GREEN + r"""}
 
 \fancypagestyle{main}{
   \fancyhf{}
@@ -252,7 +255,7 @@ def preamble(project_name, job_number, report_date, report_version='Rev 0'):
   \renewcommand{\footrule}{\vspace{-8pt}\color{osdagGreen}\hrule width\headwidth height 1pt \vspace{6pt}}
 }
 \pagestyle{main}
-\setstretch{1.15}
+\setstretch{""" + DOC_LINE_SPACING + r"""}
 
 % Custom Commands
 \newcommand{\placeholder}[1]{\textit{\textless #1\textgreater}}
@@ -260,6 +263,7 @@ def preamble(project_name, job_number, report_date, report_version='Rev 0'):
 \newcolumntype{L}[1]{>{\raggedright\arraybackslash}p{#1}}
 \newcolumntype{C}[1]{>{\centering\arraybackslash}p{#1}}
 \newcolumntype{R}[1]{>{\raggedleft\arraybackslash}p{#1}}
+\newcolumntype{Y}{>{\centering\arraybackslash}X}
 
 % Software-default asterisk
 \newcommand{\sdstar}{\textsuperscript{*}}
@@ -899,9 +903,29 @@ def generate_report(payload, request):
             quantities = calculate_material_quantities(payload.inputs, payload.output_dict)
             payload.inputs.update(quantities)
 
+            # Generate material quantity summary charts for Chapter 7
+            try:
+                from .charts import generate_material_charts
+                mat_figs = generate_material_charts(payload.inputs, tmp_images)
+                for k, v in mat_figs.items():
+                    rel_p = os.path.relpath(v, tmp_dir).replace('\\', '/')
+                    fig_paths[k] = rel_p
+            except Exception as e:
+                logger.warning(f"Failed to generate material charts: {e}")
+
             # ── Assemble LaTeX document (fig_paths now has tmp_dir paths) ──
             bridge = ReportDataBridge(payload.output_dict, payload.inputs, payload)
             span_m = float(payload.inputs.get(KEY_SPAN, 0) or 0)
+
+            # Generate Section 5.5 Overall Utilization Ratio summary chart
+            try:
+                from .charts import generate_ur_barchart, extract_overall_ur_data
+                ur_data = extract_overall_ur_data(bridge)
+                ur_chart_file = os.path.join(tmp_images, 'overall_ur.png')
+                generate_ur_barchart(ur_data, ur_chart_file)
+                fig_paths['overall_ur'] = os.path.relpath(ur_chart_file, tmp_dir).replace('\\', '/')
+            except Exception as e:
+                logger.warning(f"Failed to generate overall UR chart: {e}")
 
             doc_parts = []
             doc_parts.append(preamble(payload.metadata.project_name, payload.metadata.job_number, payload.metadata.report_date, payload.metadata.subtitle or 'Rev 0'))
@@ -924,11 +948,11 @@ def generate_report(payload, request):
             if 'analysis' in secs:
                 doc_parts.append(ch4_analysis(payload.analysis_summary, fig_paths, bridge, span_m))
             if 'design_checks' in secs:
-                doc_parts.append(ch5_design_checks(payload.design_checks, bridge))
+                doc_parts.append(ch5_design_checks(payload.design_checks, bridge, fig_paths))
             if 'drawings' in secs and payload.options.include_figures:
                 doc_parts.append(ch6_drawings(fig_paths))
 
-            doc_parts.append(ch7_quantities(payload.inputs))
+            doc_parts.append(ch7_quantities(payload.inputs, fig_paths))
 
             mode = str(payload.inputs.get(KEY_DESIGN_MODE, "Optimized")).strip().lower()
             is_custom = mode in {"custom", "customized"}

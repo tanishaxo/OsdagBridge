@@ -10,23 +10,37 @@ This section records all project metadata as entered by the designer.
 \section{Project and Design Team Details}
 \label{sec:project-details}
 
-\begin{tabular}{|L{5.5cm}|L{8.5cm}|}
+\begin{longtable}{|L{5.5cm}|L{8.5cm}|}
+\caption{\textbf{Project and Design Team Details}}\\
 \hline
-\textbf{Project Name} & """ + _tex(m.project_name) + r""" \\
+\textbf{Field} & \textbf{Value} \\[4pt]
 \hline
-\textbf{Project Location} & """ + _tex(m.project_location) + r""" \\
+\endfirsthead
+\multicolumn{2}{l}{\textit{...continued from previous page}}\\
 \hline
-\textbf{Designer} & """ + _tex(m.designer) + r""" \\
+\textbf{Field} & \textbf{Value} \\[4pt]
 \hline
-\textbf{Reviewer} & """ + _tex(m.reviewer) + r""" \\
+\endhead
 \hline
-\textbf{Organization} & """ + _tex(m.company) + r""" \\
+\multicolumn{2}{r}{\textit{Continued on next page...}}\\
+\endfoot
 \hline
-\textbf{Client} & """ + _tex(m.client) + r""" \\
+\endlastfoot
+\textbf{Project Name} & """ + _tex(m.project_name) + r""" \\[4pt]
 \hline
-\textbf{Software Version} & OsdagBridge \\
+\textbf{Project Location} & """ + _tex(m.project_location) + r""" \\[4pt]
 \hline
-\end{tabular}
+\textbf{Designer} & """ + _tex(m.designer) + r""" \\[4pt]
+\hline
+\textbf{Reviewer} & """ + _tex(m.reviewer) + r""" \\[4pt]
+\hline
+\textbf{Organization} & """ + _tex(m.company) + r""" \\[4pt]
+\hline
+\textbf{Client} & """ + _tex(m.client) + r""" \\[4pt]
+\hline
+\textbf{Software Version} & OsdagBridge \\[4pt]
+\hline
+\end{longtable}
 
 
 \section{Applicable Codes and Standards}

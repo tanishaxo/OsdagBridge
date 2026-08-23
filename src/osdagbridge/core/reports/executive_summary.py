@@ -3,6 +3,7 @@
 # ═══════════════════════════════════════════════════════════════════════════════
 
 from osdagbridge.core.reports.report_utils import _fig_or_placeholder, _render_value, _tex, get_girder_entries
+from .styles import SPEC_KV
 from osdagbridge.core.utils.common import (
     KEY_CARRIAGEWAY_WIDTH,
     KEY_SD_SECTION_DESIGNATION,
@@ -138,11 +139,9 @@ def executive_summary(input_dict, output_dict, fig_paths) -> str:
         labels = [("", "")]
     n_cols = len(labels)
 
-    # Column widths: row-label column fixed at 2.8cm; girder columns share remainder
+    # Use tabularx with a fixed row-label column and auto-sizing 'Y' columns for girders
     label_col_cm = 2.8
-    # Available width ≈ 15.0cm for A4 with 1in margins; each girder col gets equal share
-    girder_col_cm = round(max(1.5, (15.0 - label_col_cm) / n_cols), 1)
-    col_spec = '|C{' + str(label_col_cm) + 'cm}|' + '|'.join(['C{' + str(girder_col_cm) + 'cm}'] * n_cols) + '|'
+    col_spec = '|C{' + str(label_col_cm) + 'cm}|' + '|'.join(['Y'] * n_cols) + '|'
 
     # Header row
     hdr_cells = ' &\n  '.join([r'\textbf{' + _tex(lbl) + '}' for lbl, _ in labels])
@@ -163,7 +162,7 @@ def executive_summary(input_dict, output_dict, fig_paths) -> str:
     table1 = (r'\noindent\textbf{Table 1 -- Final Bridge Geometry (after optimization)}' + '\n\n'
               r'\vspace{0.4em}' + '\n'
               r'\noindent' + '\n'
-              r'\begin{tabular}{' + col_spec + '}\n'
+              r'\begin{tabularx}{\textwidth}{' + col_spec + '}\n'
               r'\hline' + '\n'
               + header_row +
               r'\hline' + '\n'
@@ -175,7 +174,7 @@ def executive_summary(input_dict, output_dict, fig_paths) -> str:
               r'\hline' + '\n'
               + urs + '\n'
               r'\hline' + '\n'
-              r'\end{tabular}')
+              r'\end{tabularx}')
 
     return r"""
 \newpage
@@ -190,7 +189,7 @@ This section provides a concise summary of the bridge design, key inputs, govern
 \label{sec:project-overview}
 
 
-\begin{tabular}{|L{5.5cm}|L{8.5cm}|}
+\begin{tabular}{""" + SPEC_KV + r"""}
 \hline
 \textbf{Bridge Type} & """ + (_render_value(input_dict, KEY_STRUCTURE_TYPE)) + r""" \\
 \hline

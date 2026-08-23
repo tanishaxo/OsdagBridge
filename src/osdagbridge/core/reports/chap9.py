@@ -28,4 +28,3 @@ def references():
 
 \end{enumerate}
 """
-
